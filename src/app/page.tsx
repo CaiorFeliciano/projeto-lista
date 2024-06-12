@@ -76,7 +76,7 @@ export default function Home() {
   }
 
   return (
-    <main className="my-6 mx-2">
+    <main className="my-10 mx-6">
       <div className="mb-2 flex items-center relative">
         <Search size={16} className="absolute left-2 text-black opacity-25" />
         <input
