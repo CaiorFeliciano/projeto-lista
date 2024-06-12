@@ -1,7 +1,5 @@
 "use client";
 
-import { ArrowDown, ArrowLeft, ArrowRight, Search } from "lucide-react";
-import data from "./data.json";
 import {
   ColumnDef,
   flexRender,
@@ -11,23 +9,59 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { ArrowDown, ArrowLeft, ArrowRight, Search } from "lucide-react";
+import { use, useEffect, useState } from "react";
 
-const columns: ColumnDef<(typeof data)[0]>[] = [
-  { accessorKey: "aluno", header: "Aluno" },
-  { accessorKey: "status", header: "Status" },
-  { accessorKey: "email", header: "E-Mail" },
-  { accessorKey: "plano", header: "Plano" },
+//definindo a interface dos dados
+interface Aluno {
+  id_aluno: number;
+  nome_aluno: string;
+  email_aluno: string;
+  id_plano: number;
+  vencimento: string;
+  ultimo_acesso: string;
+}
+
+const columns: ColumnDef<Aluno>[] = [
+  { accessorKey: "id_aluno", header: "ID" },
+  { accessorKey: "nome_aluno", header: "Nome" },
+  { accessorKey: "email_aluno", header: "E-Mail" },
+  { accessorKey: "id_plano", header: "Plano" },
   { accessorKey: "vencimento", header: "Vencimento" },
   { accessorKey: "ultimo_acesso", header: "Último Acesso" },
 ];
 
+async function getData(): Promise<Aluno[]> {
+  const res = await fetch("http://localhost:8080/alunos");
+  if (!res.ok) {
+    throw new Error("Falha em buscar os dados");
+  }
+  return res.json();
+}
+
 export default function Home() {
   const [globalFilter, setGlobalFilter] = useState("");
+  const [alunos, setALunos] = useState<Aluno[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const data = await getData();
+        console.log(data);
+        setALunos(data);
+      } catch (error) {
+        console.error("Falha ao conseguir os dados", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   const table = useReactTable({
     columns,
-    data,
+    data: alunos,
     state: {
       globalFilter,
     },
@@ -36,6 +70,10 @@ export default function Home() {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <main className="my-6 mx-2">
@@ -49,11 +87,10 @@ export default function Home() {
           onChange={(e) => setGlobalFilter(e.target.value)}
         />
       </div>
-
       <table className="table">
         <thead>
           <tr>
-            {table.getHeaderGroups()[0].headers.map((header) => (
+            {table.getFlatHeaders().map((header) => (
               <th key={header.id}>
                 <div className="flex">
                   {flexRender(
